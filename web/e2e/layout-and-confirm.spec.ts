@@ -29,8 +29,8 @@ test("Today 勾选先确认：取消/关闭不改状态，确认后刷新保持�
   await expect(checkbox).toHaveCount(0);
   await page.reload();
   await expect(checkbox).toHaveCount(0);
-  await page.goto("/app/daily");
-  await expect(page.getByRole("checkbox", { name: "撤销完成 参加班会（辅导员通知）", exact: true })).toBeChecked();
+  await page.goto("/app/tasks?tab=tasks&view=done");
+  await expect(page.getByRole("button", { name: "撤销完成 参加班会（辅导员通知）", exact: true })).toBeVisible();
 });
 
 test("左右独立滚动，品牌和账号固定，切换页面仅重置内容滚动", async ({ page }) => {
@@ -47,7 +47,7 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
   const main = page.getByRole("main");
   const sidebar = page.getByRole("complementary", { name: "主侧边栏" });
   await nav.getByRole("link", { name: "任务与目标", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "日常任务专区" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "任务与目标" })).toBeVisible();
   await nav.evaluate((el) => { el.scrollTop = 0; });
   await main.hover({ position: { x: 400, y: 30 } });
   await page.mouse.wheel(0, 900);
@@ -72,8 +72,8 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
 
 test("移动端内容仍可滚动，确认框不超出屏幕", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 550 });
-  await page.goto("/app/daily");
-  await expect(page.getByRole("heading", { name: "日常任务专区" })).toBeVisible();
+  await page.goto("/app/tasks");
+  await expect(page.getByRole("heading", { name: "任务与目标" })).toBeVisible();
   const main = page.getByRole("main");
   await main.hover({ position: { x: 150, y: 20 } });
   await page.mouse.wheel(0, 800);

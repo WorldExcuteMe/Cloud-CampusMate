@@ -25,7 +25,7 @@ test("Agent 合并桥接通知完整归档两条，刷新和重跑不重复改�
     await route.fulfill({ json: { model: "fixture", choices: [{ message }], usage: { prompt_tokens: 1, completion_tokens: 1 } } });
   });
   await page.goto("/app/inbox");
-  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见。", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见", exact: true })).toBeVisible();
   await page.evaluate(({ titles }) => {
     const state = JSON.parse(localStorage.getItem("campusmate.demo.v1")!);
     const base = state.inbox[0];

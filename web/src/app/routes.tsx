@@ -10,18 +10,23 @@ const RadarPage = lazy(() => import("@/features/radar/RadarPage").then((m) => ({
 const OpportunityDetailPage = lazy(() => import("@/features/radar/OpportunityDetailPage").then((m) => ({ default: m.OpportunityDetailPage })));
 const TrustPage = lazy(() => import("@/features/trust/TrustPage").then((m) => ({ default: m.TrustPage })));
 const TrustReportPage = lazy(() => import("@/features/trust/TrustReportPage").then((m) => ({ default: m.TrustReportPage })));
-const GrowthPage = lazy(() => import("@/features/growth/GrowthPage").then((m) => ({ default: m.GrowthPage })));
+const TasksPage = lazy(() => import("@/features/tasks/TasksPage").then((m) => ({ default: m.TasksPage })));
 const ProfilePage = lazy(() => import("@/features/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const AgentChatPage = lazy(() => import("@/features/agent/AgentChatPage").then((m) => ({ default: m.AgentChatPage })));
-const DailyTasksPage = lazy(() => import("@/features/daily/DailyTasksPage").then((m) => ({ default: m.DailyTasksPage })));
 const CalendarPage = lazy(() => import("@/features/calendar/CalendarPage").then((m) => ({ default: m.CalendarPage })));
 import { LoginPage } from "./auth";
 
-// 临时桥接：统一任务中心在 Phase 3 落地前，/app/tasks 先保留查询参数转到现有任务页。
-function TasksBridge() {
+// 旧一级入口兼容：日常专区与成长中心已合并进统一任务中心，保留查询参数语义。
+function DailyRedirect() {
+  return <Navigate to="/app/tasks?tab=tasks" replace />;
+}
+function GrowthRedirect() {
   const loc = useLocation();
-  return <Navigate to={{ pathname: "/app/growth", search: loc.search }} replace />;
+  const view = new URLSearchParams(loc.search).get("view");
+  const next = new URLSearchParams({ tab: "tasks" });
+  if (view) next.set("view", view);
+  return <Navigate to={{ pathname: "/app/tasks", search: next.toString() }} replace />;
 }
 
 export function AppRoutes() {
@@ -36,14 +41,14 @@ export function AppRoutes() {
         <Route path="inbox" element={<InboxPage />} />
         <Route path="inbox/new" element={<NewInboxPage />} />
         <Route path="inbox/:id" element={<InboxDetailPage />} />
-        <Route path="daily" element={<DailyTasksPage />} />
-        <Route path="tasks" element={<TasksBridge />} />
+        <Route path="daily" element={<DailyRedirect />} />
+        <Route path="tasks" element={<TasksPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="radar" element={<RadarPage />} />
         <Route path="radar/:id" element={<OpportunityDetailPage />} />
         <Route path="trust" element={<TrustPage />} />
         <Route path="trust/:id" element={<TrustReportPage />} />
-        <Route path="growth" element={<GrowthPage />} />
+        <Route path="growth" element={<GrowthRedirect />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

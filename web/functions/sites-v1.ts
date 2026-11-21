@@ -1213,6 +1213,18 @@ export function createSitesV1(deps: SitesV1Deps) {
       if (!inserted.length) throw new AppError(409, "domain_conflict");
       return json(201, { [kind]: stored });
     }
+    // 增量更新：POST 保持仅插入+去重的原有语义；PATCH 供前端状态同步（完成/取消/编辑）。
+    if (request.method === "PATCH") {
+      const data = await readJson(request);
+      const id = typeof data.id === "string" && /^[A-Za-z0-9_.:-]{1,200}$/.test(data.id) ? data.id : "";
+      if (!id) throw new AppError(400, "invalid_id");
+      const existing = await selectRows(table, [["id", id], ["owner_id", owner]], "*", 1);
+      if (!existing.length) throw new AppError(404, "not_found");
+      const merged = { ...jsonObject(existing[0].data), ...data, id };
+      const at = Date.now();
+      await updateRows(table, { data: merged, updated_at: at }, [["id", id], ["owner_id", owner]]);
+      return json(200, { [kind]: merged });
+    }
     return json(405, { error: "method_not_allowed" });
   }
 
