@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Inbox, Radar, ShieldCheck, Sprout, Bot, CalendarClock, CalendarDays,
+  LayoutDashboard, Inbox, Radar, Bot, CalendarClock, CalendarDays,
   ChevronDown, ChevronRight, MessageSquare, Plus, Trash2, Archive, ArchiveRestore, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,10 +33,8 @@ const NAV = [
   { to: "/app/agent", label: "智能体工作台", icon: Bot },
   { to: "/app/inbox", label: "信息中心", icon: Inbox },
   { to: "/app/calendar", label: "校园日历", icon: CalendarDays },
-  { to: "/app/daily", label: "任务与目标", icon: CalendarClock },
+  { to: "/app/tasks", label: "任务与目标", icon: CalendarClock },
   { to: "/app/radar", label: "机会中心", icon: Radar },
-  { to: "/app/trust", label: "可信核验", icon: ShieldCheck },
-  { to: "/app/growth", label: "成长中心", icon: Sprout },
 ];
 
 const navItem = (active: boolean) =>

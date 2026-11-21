@@ -10,7 +10,7 @@ import { ClassBadge, CategoryBadge, DeadlineTag } from "@/components/shared";
 import { deadlineInstant } from "../../../../shared/calendar";
 import { InboxPreview, INBOX_STATUS } from "./InboxPreview";
 
-const FILTERS = [{ id: "active", label: "全部信息" }, { id: "pending", label: "待确认" }, { id: "opportunity", label: "机会" }, { id: "risk", label: "风险提醒" }, { id: "archived", label: "归档" }];
+const FILTERS = [{ id: "active", label: "未归档" }, { id: "pending", label: "待确认" }, { id: "opportunity", label: "机会" }, { id: "risk", label: "风险提醒" }, { id: "archived", label: "归档" }];
 export function InboxPage() {
   const repository = useRepository();
   const owner = useAuth().session?.user.id ?? "demo";

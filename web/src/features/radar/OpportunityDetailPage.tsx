@@ -57,7 +57,7 @@ export function OpportunityDetailPage() {
       </Button>
       <PageHeader
         title={opp.title}
-        actions={<CategoryBadge value={opp.type as NoticeCategory} />}
+        actions={<div className="flex items-center gap-2"><CategoryBadge value={opp.type as NoticeCategory} /><VerifyBadge value={report?.status ?? "UNVERIFIED"} /></div>}
       />
       <Card className="mb-4">
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
@@ -97,7 +97,7 @@ export function OpportunityDetailPage() {
         )}
       </div>
 
-      {report && (
+      {report ? (
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-base">可信度核验</CardTitle>
@@ -105,6 +105,8 @@ export function OpportunityDetailPage() {
           </CardHeader>
           <CardContent><p className="text-sm text-muted-foreground">{report.summary}</p></CardContent>
         </Card>
+      ) : (
+        <p className="text-xs text-muted-foreground">该机会尚未运行来源核验；参与前请核对原始通知与官方来源。</p>
       )}
     </div>
   );

@@ -20,6 +20,7 @@ export function TrustPage() {
   return (
     <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="Trust Engine" description="每条核验结论都有证据支持；无法核验 ≠ 诈骗。" />
+      <p className="mb-4 rounded-lg border border-dashed p-3 text-xs text-muted-foreground">可信核验已内嵌到信息中心与机会中心：通知与机会旁直接显示核验状态与证据入口。本页保留核验报告档案，旧链接仍可访问。</p>
       {reports.length === 0 ? (
         <EmptyState
           title={runtime === "cloud" ? "核验报告云端暂未就绪" : "暂无核验报告"}

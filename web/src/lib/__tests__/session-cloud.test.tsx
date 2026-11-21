@@ -94,6 +94,8 @@ it('旧账号的迟到响应不能写入新账号缓存，所有请求绑定预�
 
 it('恢复后只请求增量；空增量不重写全部会话缓存，不走旧完整历史端点',async()=>{
   render(<SessionsProvider><Probe /></SessionsProvider>);await waitFor(()=>expect(screen.getByTestId('A-messages')).toHaveTextContent('完整回答'));
+  // 吸收前序用例残留的异步保存，避免负载下偶发写入落入断言窗口（flaky 稳定化）。
+  await act(async()=>{await new Promise(r=>setTimeout(r,30));});
   vi.mocked(api.getHistoryChanges).mockResolvedValue({session:remotes[0],items:[],after:'new-watermark',hasMore:false});
   const write=vi.spyOn(Storage.prototype,'setItem');write.mockClear();
   fireEvent.click(screen.getByText('A-refresh'));
