@@ -59,7 +59,7 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
   await expect.poll(() => nav.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   expect(await main.evaluate((el) => el.scrollTop)).toBe(rightScroll);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  const brand = await sidebar.getByText("CampusMate", { exact: true }).boundingBox();
+  const brand = await sidebar.locator('img[alt="CampusMate"]').boundingBox();
   const account = await sidebar.getByRole("button", { name: "用户与设置", exact: true }).boundingBox();
   expect(brand!.y).toBeGreaterThanOrEqual(0);
   expect(account!.y + account!.height).toBeLessThanOrEqual(540);

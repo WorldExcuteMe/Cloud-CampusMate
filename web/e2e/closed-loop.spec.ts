@@ -24,9 +24,10 @@ test("第一条业务闭环：导入→提取→确认→待办→Dashboard→�
   await expect(page.getByText("MOCK · 规则提取")).toBeVisible();
   await page.screenshot({ path: `${EVIDENCE}/04-extracted-review.png`, fullPage: true });
 
-  // 保存并生成待办 → 跳转 Dashboard
+  // 保存并生成待办 → 跳转 Dashboard；新任务进入统一任务中心（Today 只展示优先前 5 条）
   await page.getByRole("button", { name: "保存并生成待办" }).click();
   await expect(page).toHaveURL(/\/app$/);
+  await page.goto("/app/tasks");
   await expect(page.getByText(/处理：.*程序设计大赛/)).toBeVisible();
   await page.screenshot({ path: `${EVIDENCE}/05-dashboard-with-task.png`, fullPage: true });
 
