@@ -1,0 +1,205 @@
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard, Inbox, Radar, ShieldCheck, Sprout, Bot, CalendarClock, CalendarDays,
+  ChevronDown, ChevronRight, MessageSquare, Plus, Trash2, Archive, ArchiveRestore, Check,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "./auth";
+import { runtime } from "./config";
+import { useSessions } from "@/lib/agent/sessions-context";
+import { UserChip, BrandMark } from "@/components/UserChip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+function SessionAction({ label, hint, destructive = false, children, onClick }: {
+  label: string; hint: string; destructive?: boolean; children: ReactNode;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <Tooltip disableHoverableContent>
+      <TooltipTrigger asChild>
+        <button type="button" aria-label={label} onClick={onClick}
+          className={cn("flex size-6 shrink-0 cursor-pointer items-center justify-center rounded opacity-0 pointer-events-none transition-colors group-hover/session:opacity-100 group-hover/session:pointer-events-auto group-focus-within/session:opacity-100 group-focus-within/session:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto",
+            destructive ? "hover:bg-destructive/15 hover:text-destructive" : "hover:bg-sidebar-accent hover:text-sidebar-foreground")}
+        >{children}</button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={8} className="pointer-events-none">{hint}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+const NAV = [
+  { to: "/app", label: "Today", icon: LayoutDashboard, end: true },
+  { to: "/app/agent", label: "智能体工作台", icon: Bot },
+  { to: "/app/inbox", label: "信息中心", icon: Inbox },
+  { to: "/app/calendar", label: "校园日历", icon: CalendarDays },
+  { to: "/app/daily", label: "任务与目标", icon: CalendarClock },
+  { to: "/app/radar", label: "机会中心", icon: Radar },
+  { to: "/app/trust", label: "可信核验", icon: ShieldCheck },
+  { to: "/app/growth", label: "成长中心", icon: Sprout },
+];
+
+const navItem = (active: boolean) =>
+  cn(
+    "group relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+    active
+      ? "bg-sidebar-accent text-sidebar-foreground"
+      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+  );
+
+export function Layout() {
+  const { session, configured } = useAuth();
+  const { sessions, activeId, setActiveId, create, remove, archive, restore, syncError, syncing, initialLoading, refresh } = useSessions();
+  const nav = useNavigate();
+  const loc = useLocation();
+  const [expand, setExpand] = useState(loc.pathname.startsWith("/app/agent"));
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const contentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [loc.pathname]);
+
+  return (
+    <TooltipProvider delayDuration={250}>
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <aside aria-label="主侧边栏" className="hidden min-h-0 w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        <div className="shrink-0 px-3 py-3">
+          <BrandMark />
+        </div>
+        <nav aria-label="主导航" className="scrollbar-thin flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-3 pb-3">
+          {NAV.map((item) =>
+            item.to === "/app/agent" ? (
+              <div key={item.to}>
+                <button
+                  className={cn(navItem(loc.pathname.startsWith("/app/agent")), "w-full")}
+                  onClick={() => { setExpand((e) => !e); nav("/app/agent"); }}
+                >
+                  <item.icon className="size-4" />
+                  {item.label}
+                  {expand ? <ChevronDown className="ml-auto size-3.5" /> : <ChevronRight className="ml-auto size-3.5" />}
+                </button>
+                {expand && (() => {
+                  const recent = sessions.filter((s) => !s.archived).slice(0, 20);
+                  const completed = sessions.filter((s) => s.archived);
+                  const row = (s: (typeof sessions)[number]) => (
+                    <div
+                      key={s.id}
+                      data-session-id={s.id}
+                      className={cn(
+                        "group/session flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
+                        s.id === activeId ? "bg-sidebar-accent text-sidebar-foreground" : "text-muted-foreground hover:bg-sidebar-accent/60",
+                      )}
+                      onClick={() => { setActiveId(s.id); nav("/app/agent"); }}
+                    >
+                      <MessageSquare className="size-3 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                      {confirmId === s.id ? (
+                        <button
+                          className="shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive"
+                          aria-label="确认删除"
+                          onClick={(e) => { e.stopPropagation(); remove(s.id); setConfirmId(null); }}
+                        >
+                          确认删除?
+                        </button>
+                      ) : (
+                        <>
+                          <SessionAction
+                            label={s.archived ? "移回最近" : "标记完成"}
+                            hint={s.archived ? "移回最近会话" : "标记为已完成会话 · 记录保留"}
+                            onClick={(e) => { e.stopPropagation(); s.archived ? restore(s.id) : archive(s.id); }}
+                          >
+                            {s.archived ? <ArchiveRestore aria-hidden="true" className="size-3.5" /> : <Archive aria-hidden="true" className="size-3.5" />}
+                          </SessionAction>
+                          <SessionAction
+                            label="删除会话"
+                            hint="删除会话 · 需再次确认"
+                            destructive
+                            onClick={(e) => { e.stopPropagation(); setConfirmId(s.id); }}
+                          >
+                            <Trash2 aria-hidden="true" className="size-3.5" />
+                          </SessionAction>
+                        </>
+                      )}
+                    </div>
+                  );
+                  return (
+                    <div className="mt-1 flex flex-col gap-0.5 pl-4">
+                      {recent.length === 0 && <p className="px-2 py-1 text-[11px] text-muted-foreground">还没有会话，点“新会话”开始</p>}
+                      {recent.map(row)}
+                      {completed.length > 0 && (
+                        <details className="mt-1" open={showArchived} onToggle={(e) => setShowArchived(e.currentTarget.open)}>
+                          <summary className="cursor-pointer rounded-md px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-sidebar-accent/60">已完成会话（{completed.length}）</summary>
+                          <div className="mt-0.5 flex flex-col gap-0.5">{completed.map(row)}</div>
+                        </details>
+                      )}
+                      <button
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-sidebar-accent/60"
+                        onClick={() => { create(); nav("/app/agent"); }}
+                      >
+                        <Plus className="size-3" /> 新会话
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => navItem(isActive)}>
+                <item.icon className="size-4" />
+                {item.label}
+              </NavLink>
+            ),
+          )}
+        </nav>
+        <div className="flex shrink-0 flex-col gap-2 border-t border-sidebar-border px-3 py-3">
+          <UserChip />
+        </div>
+      </aside>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
+          <BrandMark />
+          <div className="ml-auto w-44 shrink-0"><UserChip /></div>
+        </header>
+        <nav aria-label="移动导航" className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  "whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium",
+                  isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground",
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {!session && (runtime === "cloud" ? (
+          <div className="flex shrink-0 items-center justify-center gap-1 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+            演示数据 ·
+            <button type="button" className="font-medium text-foreground/80 underline-offset-4 hover:underline" onClick={() => nav("/login")}>
+              登录进入个人空间
+            </button>
+          </div>
+        ) : (
+          <div className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+            演示数据模式 · 数据仅保存在本机浏览器
+            {configured ? <span className="text-foreground/70">登录后启用真实账号</span> : null}
+          </div>
+        ))}
+
+        {(initialLoading || syncing || syncError) && <div role={syncError ? 'alert' : 'status'} className="shrink-0 border-b px-4 py-2 text-xs"><span>{syncError ?? (initialLoading ? '正在从后端恢复会话…' : '正在保存会话更改…')}</span>{syncError && <button type="button" className="ml-2 underline" onClick={refresh}>重试同步</button>}</div>}
+        <main ref={contentRef} className="cm-aurora scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+    </TooltipProvider>
+  );
+}
+
+

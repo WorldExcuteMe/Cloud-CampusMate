@@ -1,0 +1,202 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../vendor/shadcn-tailwind-4.13.0.css";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+@utility scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* CampusMate ink-aurora design system: theme-derived palette, light/dark via [data-theme]. */
+:root {
+  --site-font: "Inter", "SF Pro Text", -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --site-space: 1;
+  --site-type: 1;
+  --site-motion: 1;
+  --radius: 0.5rem;
+  /* 石墨工具风 v2：中性灰阶 + 系统蓝（VS Code 式纯色，无渐变/无 glow）。 */
+  --background: #ffffff;
+  --foreground: #1f1f1f;
+  --card: #ffffff;
+  --card-foreground: #1f1f1f;
+  --popover: #ffffff;
+  --popover-foreground: #1f1f1f;
+  --primary: #007acc;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f3f3;
+  --secondary-foreground: #1f1f1f;
+  --muted: #f3f3f3;
+  --muted-foreground: #616161;
+  --accent: #e5f1f9;
+  --accent-foreground: #0b5c8f;
+  --destructive: #c42b1c;
+  --destructive-foreground: #ffffff;
+  --success: #107c10;
+  --warning: #9a6700;
+  --info: #007acc;
+  --border: #e0e0e0;
+  --input: #c8c8c8;
+  --ring: #007acc;
+  --chart-1: #007acc;
+  --chart-2: #4b8bbe;
+  --chart-3: #8a8a8a;
+  --chart-4: #5f6a72;
+  --chart-5: #a0a0a0;
+  --chart-6: #2f6f9f;
+  --sidebar: #f8f8f8;
+  --sidebar-foreground: #1f1f1f;
+  --sidebar-primary: #007acc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8e8e8;
+  --sidebar-accent-foreground: #1f1f1f;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #007acc;
+  --glow: 0 122 204;
+}
+
+[data-theme="dark"] {
+  --background: #1e1e1e;
+  --foreground: #e6e6e6;
+  --card: #252526;
+  --card-foreground: #e6e6e6;
+  --popover: #2a2a2b;
+  --popover-foreground: #e6e6e6;
+  --primary: #3794ff;
+  --primary-foreground: #0b0b0b;
+  --secondary: #2d2d30;
+  --secondary-foreground: #d6d6d6;
+  --muted: #2a2a2b;
+  --muted-foreground: #a3a3a3;
+  --accent: #04395e;
+  --accent-foreground: #9cdcfe;
+  --destructive: #f85149;
+  --destructive-foreground: #1e1e1e;
+  --success: #3fb950;
+  --warning: #d29922;
+  --info: #3794ff;
+  --border: #333333;
+  --input: #474747;
+  --ring: #3794ff;
+  --chart-1: #3794ff;
+  --chart-2: #4b8bbe;
+  --chart-3: #8a8a8a;
+  --chart-4: #6a737d;
+  --chart-5: #9d9d9d;
+  --chart-6: #2f6f9f;
+  --sidebar: #252526;
+  --sidebar-foreground: #d6d6d6;
+  --sidebar-primary: #3794ff;
+  --sidebar-primary-foreground: #0b0b0b;
+  --sidebar-accent: #2d2d30;
+  --sidebar-accent-foreground: #e6e6e6;
+  --sidebar-border: #333333;
+  --sidebar-ring: #3794ff;
+  --glow: 55 148 255;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--site-font);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --spacing: calc(0.25rem * var(--site-space));
+  --text-xs: calc(.75rem * var(--site-type));
+  --text-sm: calc(.875rem * var(--site-type));
+  --text-base: calc(1rem * var(--site-type));
+  --text-lg: calc(1.125rem * var(--site-type));
+  --text-xl: calc(1.25rem * var(--site-type));
+  --text-2xl: calc(1.5rem * var(--site-type));
+  --text-3xl: calc(1.875rem * var(--site-type));
+  --text-4xl: calc(2.25rem * var(--site-type));
+  --default-transition-duration: calc(150ms * var(--site-motion));
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--site-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--input) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--input);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); background-clip: content-box; }
+
+@utility cm-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+@utility cm-glow {
+  box-shadow: 0 0 0 1px var(--border);
+}
+@utility cm-gradient-text {
+  color: var(--foreground);
+}
+@utility cm-aurora {
+  background: var(--background);
+}
+
+@layer base {
+  *, ::before, ::after { border-color: var(--border); }
+  button, a { transition-duration: calc(150ms * var(--site-motion)); }
+  @media (prefers-reduced-motion: reduce) {
+    button, a { transition-duration: 0ms; }
+  }
+}

@@ -1,0 +1,123 @@
+// Deployment entry point for the Sites Function.
+// The Sites Worker injects `_qoder/backend.mjs` before deployment; it is never
+// committed or stubbed here. Local development keeps using ./runtime.ts through
+// dev/function-local.ts.
+import { createDatabaseClient, createSiteContext, requireUser, errorResponse } from "./_qoder/backend.mjs";
+import { CAMPUSMATE_SITES } from "./sites-config.ts";
+import { createProductionSites } from "./sites-production.ts";
+import { createCloudAgentsClient } from "./cloud-agents.ts";
+import { createCloudAgentsClient as createManagedCloudClient } from "./qca-managed.mjs";
+import { createSitesV1, type SitesV1Cloud } from "./sites-v1.ts";
+import { createServerModelExecutor, createUserKeyVault, SERVER_PROVIDERS } from "./sites-exec.ts";
+
+const db = createDatabaseClient();
+const getToken = () => Deno.env.get("QODER_PAT");
+const env = Deno.env.toObject();
+
+const platform = createProductionSites({
+  db,
+  requireUser,
+  config: CAMPUSMATE_SITES,
+  // QODER_PAT is a platform-managed Secret read per request inside the handler.
+  getToken,
+});
+
+// Qoder 托管模型（Cloud Agents 沙箱）与服务端模型（Edge 分步执行器）统一成
+// 只读 Provider 列表；这里只含公开元数据，任何密钥都不下发给浏览器。
+const managedProviders = [
+  ...SERVER_PROVIDERS.map(provider => ({
+    id: provider.id, displayName: provider.name, modelId: provider.model,
+    protocol: "openai", baseUrl: provider.baseUrl, contextLimit: provider.contextLimit,
+    managed: true, readonly: true, builtin: true, isDefault: provider.id === "srv-moss",
+    hasKey: true,
+    capabilities: {
+      vision: true,
+      tools: "native", streaming: false,
+      reasoningTiers: provider.tiers, defaultReasoning: provider.defaultTier,
+    },
+  })),
+];
+
+// 每次请求读取平台托管 PAT 再构造客户端；绑定在首个 Cloud 会话前由平台初始化流程解析。
+function runtimeCloud(): SitesV1Cloud {
+  const client = () => createCloudAgentsClient({
+    accessToken: getToken() ?? "",
+    baseUrl: CAMPUSMATE_SITES.cloudAgentsApiOrigin,
+    fetch,
+  });
+  return {
+    createSession: async () => {
+      const binding = await platform.resolveBinding();
+      return await client().createSession(binding.agent, binding.environmentId);
+    },
+    sendMessage: (sessionId, text) => client().sendMessage(sessionId, text),
+    listEvents: (sessionId, nextPage) => client().listEvents(sessionId, nextPage),
+    streamEvents: (sessionId, lastEventId, signal) => client().streamEvents(sessionId, lastEventId, signal),
+    cancelSession: sessionId => client().cancelSession(sessionId),
+    getDownloadLink: fileId => client().getDownloadLink(fileId),
+    fetch,
+  };
+}
+
+const v1 = createSitesV1({
+  db,
+  cloud: runtimeCloud(),
+  config: {
+    // 静态占位；真实 Agent/Environment 由 binding() 在首个 Cloud 会话前解析。
+    agent: { id: "agent_pending", version: 1 },
+    environmentId: "env_pending",
+    providers: managedProviders,
+    capabilities: { providersMutable: true, serverModels: true, attachments: true },
+    model: CAMPUSMATE_SITES.model,
+  },
+  binding: () => platform.resolveBinding(),
+  exec: createServerModelExecutor({ db, env, fetch }),
+  vault: createUserKeyVault(db, { env }),
+  ownerOf: ctx => {
+    const user = requireUser(ctx);
+    return user && typeof user.id === "string" ? user.id : null;
+  },
+});
+
+// 网关会改写物理函数名；路由只认路径：/v1/* 走数据面，其余保留 P0 /runs 应用。
+Deno.serve(async request => {
+  let context;
+  try {
+    context = createSiteContext(request);
+    const pathname = new URL(request.url).pathname;
+    // 登录后可直接打开 /v1/cloud-status 查看 Cloud Agents 初始化状态与可用模型（不含密钥）。
+    if (/(?:^|\/)v1\/cloud-status$/.test(pathname)) {
+      const tokenPresent = Boolean(getToken());
+      try {
+        requireUser(context);
+        const binding = await platform.resolveBinding();
+        return Response.json({ ok: true, tokenPresent, configuredModel: CAMPUSMATE_SITES.model, agentId: binding.agent.id.slice(0, 12), agentVersion: binding.agent.version, environmentId: binding.environmentId.slice(0, 12) });
+      } catch (error) {
+        const code = error && typeof error === "object" && "message" in error ? String((error as { message: unknown }).message) : "unknown";
+        const status = error && typeof error === "object" && "status" in error ? Number((error as { status: unknown }).status) : 503;
+        console.error("[campusmate] cloud-status failed", { code, status });
+        let models: string[] = [];
+        let modelsRaw: unknown[] = [];
+        let modelsError = "";
+        try {
+          // 模型列表属于平台管理客户端（带 request 方法），业务 SSE 客户端没有该 API。
+          const client = createManagedCloudClient({ origin: CAMPUSMATE_SITES.cloudAgentsApiOrigin, getToken, fetchImpl: fetch });
+          const list = await client.request("/api/v1/cloud/models") as { data?: unknown[] };
+          modelsRaw = Array.isArray(list.data) ? list.data.slice(0, 10) : [];
+          models = (Array.isArray(list.data) ? list.data : []).flatMap(item => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+            const row = item as { id?: unknown; is_enabled?: unknown };
+            return row.is_enabled === true && typeof row.id === "string" ? [row.id] : [];
+          }).slice(0, 20);
+        } catch (error) {
+          modelsError = error && typeof error === "object" && "message" in error ? String((error as { message: unknown }).message) : "unknown";
+        }
+        return Response.json({ ok: false, tokenPresent, configuredModel: CAMPUSMATE_SITES.model, code, status, models, modelsRaw, modelsError }, { status: 200 });
+      }
+    }
+    if (/(?:^|\/)v1(?:\/|$)/.test(pathname)) return await v1(context);
+    return await platform(context);
+  } catch (error) {
+    return errorResponse(error, context?.requestId);
+  }
+});
