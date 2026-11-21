@@ -62,7 +62,7 @@ export function Layout() {
   return (
     <TooltipProvider delayDuration={250}>
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <aside aria-label="主侧边栏" className="hidden min-h-0 w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <aside aria-label="主侧边栏" className="hidden min-h-0 w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="shrink-0 px-3 py-3">
           <BrandMark />
         </div>

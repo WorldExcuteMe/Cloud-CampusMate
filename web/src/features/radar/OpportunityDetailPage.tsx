@@ -51,7 +51,7 @@ export function OpportunityDetailPage() {
   const historical = timeState === "expired" || timeState === "archived";
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <Button variant="ghost" size="sm" asChild className="mb-3">
         <Link to="/app/radar"><ArrowLeft className="size-4" />返回雷达</Link>
       </Button>

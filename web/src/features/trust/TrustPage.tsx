@@ -18,7 +18,7 @@ export function TrustPage() {
   const titleOf = (id: string) => opps.find((o) => o.id === id)?.title ?? id;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="Trust Engine" description="每条核验结论都有证据支持；无法核验 ≠ 诈骗。" />
       {reports.length === 0 ? (
         <EmptyState

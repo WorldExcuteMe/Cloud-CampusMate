@@ -68,7 +68,7 @@ export function InboxDetailPage() {
 
   const e = item.extracted;
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <Button variant="ghost" size="sm" asChild className="mb-3">
         <Link to="/app/inbox"><ArrowLeft className="size-4" />返回 Inbox</Link>
       </Button>

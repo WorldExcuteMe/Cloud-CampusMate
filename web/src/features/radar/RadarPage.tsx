@@ -42,7 +42,7 @@ export function RadarPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="Opportunity Radar" description="按北京时间管理截止日期；过期记录保留在历史分类，不自动删除。" />
       <div className="mb-4 flex flex-wrap gap-2">
         <div className="relative max-w-xs flex-1">

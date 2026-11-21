@@ -35,7 +35,7 @@ export function GrowthPage() {
   const shown = tab === "open" ? open : tab === "soon" ? soon : tab === "overdue" ? overdue : tab === "done" ? done : tasks;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="Growth Center" description="目标、任务规划与成长档案。完成任务经确认后计入成长经历。" />
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -73,7 +73,7 @@ export function DailyTasksPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="日常任务专区" description="收集调课、班会、讲座等含时间日期的群通知；自动清洗、去重、提取时间。" />
 
       <Card className="mb-4">

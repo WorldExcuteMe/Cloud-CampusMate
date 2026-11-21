@@ -21,7 +21,7 @@
   --site-space: 1;
   --site-type: 1;
   --site-motion: 1;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   /* 石墨工具风 v2：中性灰阶 + 系统蓝（VS Code 式纯色，无渐变/无 glow）。 */
   --background: #ffffff;
   --foreground: #1f1f1f;
