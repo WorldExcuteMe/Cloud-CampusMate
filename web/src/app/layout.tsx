@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Inbox, Radar, ShieldCheck, Sprout, Bot, CalendarClock, CalendarDays,
+  LayoutDashboard, Inbox, Radar, Bot, CalendarClock, CalendarDays,
   ChevronDown, ChevronRight, MessageSquare, Plus, Trash2, Archive, ArchiveRestore, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,10 +33,8 @@ const NAV = [
   { to: "/app/agent", label: "智能体工作台", icon: Bot },
   { to: "/app/inbox", label: "信息中心", icon: Inbox },
   { to: "/app/calendar", label: "校园日历", icon: CalendarDays },
-  { to: "/app/daily", label: "任务与目标", icon: CalendarClock },
+  { to: "/app/tasks", label: "任务与目标", icon: CalendarClock },
   { to: "/app/radar", label: "机会中心", icon: Radar },
-  { to: "/app/trust", label: "可信核验", icon: ShieldCheck },
-  { to: "/app/growth", label: "成长中心", icon: Sprout },
 ];
 
 const navItem = (active: boolean) =>
@@ -62,7 +60,7 @@ export function Layout() {
   return (
     <TooltipProvider delayDuration={250}>
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
-      <aside aria-label="主侧边栏" className="hidden min-h-0 w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+      <aside aria-label="主侧边栏" className="hidden min-h-0 w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="shrink-0 px-3 py-3">
           <BrandMark />
         </div>
@@ -156,11 +154,11 @@ export function Layout() {
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
+        <header key="mobile-header" className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
           <BrandMark />
           <div className="ml-auto w-44 shrink-0"><UserChip /></div>
         </header>
-        <nav aria-label="移动导航" className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden">
+        <nav key="mobile-nav" aria-label="移动导航" className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card px-2 py-2 md:hidden">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -179,21 +177,21 @@ export function Layout() {
         </nav>
 
         {!session && (runtime === "cloud" ? (
-          <div className="flex shrink-0 items-center justify-center gap-1 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+          <div key="demo-banner" className="flex shrink-0 items-center justify-center gap-1 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
             演示数据 ·
             <button type="button" className="font-medium text-foreground/80 underline-offset-4 hover:underline" onClick={() => nav("/login")}>
               登录进入个人空间
             </button>
           </div>
         ) : (
-          <div className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
+          <div key="demo-banner" className="flex shrink-0 items-center justify-center gap-2 border-b border-border bg-muted/50 px-4 py-1.5 text-center text-[11px] text-muted-foreground">
             演示数据模式 · 数据仅保存在本机浏览器
             {configured ? <span className="text-foreground/70">登录后启用真实账号</span> : null}
           </div>
         ))}
 
-        {(initialLoading || syncing || syncError) && <div role={syncError ? 'alert' : 'status'} className="shrink-0 border-b px-4 py-2 text-xs"><span>{syncError ?? (initialLoading ? '正在从后端恢复会话…' : '正在保存会话更改…')}</span>{syncError && <button type="button" className="ml-2 underline" onClick={refresh}>重试同步</button>}</div>}
-        <main ref={contentRef} className="cm-aurora scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-8">
+        {(initialLoading || syncing || syncError) && <div key="sync-status" role={syncError ? 'alert' : 'status'} className="shrink-0 border-b px-4 py-2 text-xs"><span>{syncError ?? (initialLoading ? '正在从后端恢复会话…' : '正在保存会话更改…')}</span>{syncError && <button type="button" className="ml-2 underline" onClick={refresh}>重试同步</button>}</div>}
+        <main key="main" ref={contentRef} className="cm-aurora scrollbar-thin min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-8">
           <Outlet />
         </main>
       </div>

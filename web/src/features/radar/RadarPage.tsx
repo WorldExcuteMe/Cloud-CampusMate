@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { opportunityTimeState, OPPORTUNITY_TIME_LABELS, type OpportunityTimeState } from "@/lib/time-policy";
@@ -16,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRepository } from "@/app/auth";
-import { CategoryBadge, DeadlineTag, EmptyState, PageHeader } from "@/components/shared";
+import { CategoryBadge, DeadlineTag, EmptyState, PageHeader, VerifyBadge } from "@/components/shared";
 import type { NoticeCategory } from "@/lib/schemas";
 
 export function RadarPage() {
@@ -25,6 +24,11 @@ export function RadarPage() {
     queryKey: ["opps"],
     queryFn: () => repository.listOpportunities(),
   });
+  const { data: reports = [] } = useQuery({
+    queryKey: ["reports"],
+    queryFn: () => repository.listReports(),
+  });
+  const reportOf = (id: string) => reports.find((r) => r.opportunityId === id);
   const [q, setQ] = useState("");
   const [type, setType] = useState<string>("all");
   const [time, setTime] = useState<OpportunityTimeState | "all">("active");
@@ -42,7 +46,7 @@ export function RadarPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto w-full max-w-[1280px]">
       <PageHeader title="Opportunity Radar" description="按北京时间管理截止日期；过期记录保留在历史分类，不自动删除。" />
       <div className="mb-4 flex flex-wrap gap-2">
         <div className="relative max-w-xs flex-1">
@@ -64,7 +68,7 @@ export function RadarPage() {
       </div>
 
       <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="机会时效筛选">
-        {(["active", "expired", "unknown", "archived", "all"] as const).map((value) => (
+        {(["active", "unknown", "expired", "archived", "all"] as const).map((value) => (
           <Button key={value} size="sm" variant={time === value ? "default" : "outline"}
             aria-pressed={time === value} onClick={() => setTime(value)}>
             {value === "all" ? "全部" : OPPORTUNITY_TIME_LABELS[value]}（{value === "all" ? matching.length : matching.filter((o) => opportunityTimeState(o, today) === value).length}）
@@ -76,21 +80,15 @@ export function RadarPage() {
       {filtered.length === 0 ? (
         <EmptyState title="没有匹配的机会" hint="可切换时效分类或调整搜索条件；历史记录没有被删除。" />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
           {filtered.map((o) => (
-            <Link key={o.id} to={`/app/radar/${o.id}`}>
-              <Card className="h-full transition-shadow hover:shadow-md">
-                <CardContent className="flex flex-col gap-2 p-4">
-                  <div className="flex items-center gap-2">
-                    <CategoryBadge value={o.type as NoticeCategory} />
-                    <Badge variant="outline">{OPPORTUNITY_TIME_LABELS[opportunityTimeState(o, today)]}</Badge>
-                    <span className="ml-auto text-xs text-muted-foreground">{o.sourceType}</span>
-                  </div>
-                  <p className="font-medium leading-snug">{o.title}</p>
-                  <p className="text-xs text-muted-foreground">{o.organizer}</p>
-                  <DeadlineTag deadline={o.deadline} />
-                </CardContent>
-              </Card>
+            <Link key={o.id} to={`/app/radar/${o.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-border p-3 transition-colors hover:bg-muted">
+              <CategoryBadge value={o.type as NoticeCategory} />
+              <Badge variant="outline">{OPPORTUNITY_TIME_LABELS[opportunityTimeState(o, today)]}</Badge>
+              <VerifyBadge value={reportOf(o.id)?.status ?? "UNVERIFIED"} />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{o.title}</span>
+              <span className="hidden text-xs text-muted-foreground sm:inline">{o.organizer}</span>
+              <DeadlineTag deadline={o.deadline} />
             </Link>
           ))}
         </div>

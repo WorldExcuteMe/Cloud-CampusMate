@@ -24,9 +24,10 @@ test("第一条业务闭环：导入→提取→确认→待办→Dashboard→�
   await expect(page.getByText("MOCK · 规则提取")).toBeVisible();
   await page.screenshot({ path: `${EVIDENCE}/04-extracted-review.png`, fullPage: true });
 
-  // 保存并生成待办 → 跳转 Dashboard
+  // 保存并生成待办 → 跳转 Dashboard；新任务进入统一任务中心（Today 只展示优先前 5 条）
   await page.getByRole("button", { name: "保存并生成待办" }).click();
   await expect(page).toHaveURL(/\/app$/);
+  await page.goto("/app/tasks");
   await expect(page.getByText(/处理：.*程序设计大赛/)).toBeVisible();
   await page.screenshot({ path: `${EVIDENCE}/05-dashboard-with-task.png`, fullPage: true });
 
@@ -52,8 +53,9 @@ test("机会雷达与核验报告可浏览", async ({ page }) => {
   await page.screenshot({ path: `${EVIDENCE}/08-trust.png`, fullPage: true });
 });
 
-test("日常任务专区：群通知清洗+时间提取+导入", async ({ page }) => {
-  await page.goto("/app/daily");
+test("统一任务中心：群通知清洗+时间提取+导入", async ({ page }) => {
+  await page.goto("/app/tasks");
+  await page.getByText("导入群通知（QQ/微信转发）").click();
   await page.getByPlaceholder(/粘贴转发的群消息/).fill("@全体 周五19:00在教三101开班会，收到回复");
   await expect(page.getByText(/识别时间/)).toBeVisible();
   await page.screenshot({ path: `${EVIDENCE}/09-daily-import.png`, fullPage: true });
@@ -72,18 +74,22 @@ test("会话页与供应商设置页可达", async ({ page }) => {
   await page.screenshot({ path: `${EVIDENCE}/12-provider-settings.png`, fullPage: true });
 });
 
-test("日常任务可完成与撤销完成，刷新后状态持久化", async ({ page }) => {
-  await page.goto("/app/daily");
+test("日常任务可确认完成与撤销完成，刷新后状态持久化", async ({ page }) => {
+  await page.goto("/app/tasks?tab=tasks&view=open");
   const checkbox = page.getByRole("checkbox", { name: /参加班会/ });
   await expect(checkbox).not.toBeChecked();
   await checkbox.click();
-  await expect(checkbox).toBeChecked();
+  await page.getByRole("alertdialog").getByRole("button", { name: "确认完成", exact: true }).click();
+  await page.getByRole("button", { name: "已完成", exact: true }).click();
+  const undo = page.getByRole("button", { name: /撤销完成 参加班会/ });
+  await expect(undo).toBeVisible();
   await page.reload();
-  await expect(checkbox).toBeChecked();
-  await checkbox.click();
-  await expect(checkbox).not.toBeChecked();
+  await expect(undo).toBeVisible();
+  await undo.click();
+  await page.getByRole("button", { name: "进行中", exact: true }).click();
+  await expect(page.getByRole("checkbox", { name: /参加班会/ })).not.toBeChecked();
   await page.reload();
-  await expect(checkbox).not.toBeChecked();
+  await expect(page.getByRole("checkbox", { name: /参加班会/ })).not.toBeChecked();
   await page.goto("/app");
   await expect(page.getByText("参加班会（辅导员通知）", { exact: true })).toBeVisible();
 });

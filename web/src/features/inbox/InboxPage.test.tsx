@@ -16,8 +16,8 @@ it("筛选和搜索真实通知，选择后预览原文和来源，归档默认�
   expect(screen.queryByRole("button", { name: /预览去年归档通知/ })).toBeNull();
   fireEvent.change(screen.getByRole("searchbox"), { target: { value: "退款" } });
   fireEvent.click(screen.getByRole("button", { name: /预览学费退款风险提醒/ }));
-  expect(screen.getByRole("link", { name: /打开来源/ })).toHaveAttribute("href", "https://school.example/news");
-  expect(screen.getByRole("link", { name: /查看详情并处理/ })).toHaveAttribute("href", "/app/inbox/b");
+  expect(screen.getByRole("link", { name: /查看来源/ })).toHaveAttribute("href", "https://school.example/news");
+  expect(screen.getByRole("link", { name: /完整详情页/ })).toHaveAttribute("href", "/app/inbox/b");
 });
 it("读取错误明确显示，允许重试而不是伪装为空收件箱", async () => {
   mock.list.mockRejectedValue(new Error("读取失败")); view(); expect(await screen.findByRole("alert")).toHaveTextContent("读取失败"); expect(screen.getByRole("button", { name: "重试" })).toBeVisible();

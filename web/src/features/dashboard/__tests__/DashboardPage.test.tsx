@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -25,7 +25,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); client.clear(); vi.restoreAllMocks(); });
 const mount = () => render(<MemoryRouter><QueryClientProvider client={client}><DashboardPage /></QueryClientProvider></MemoryRouter>);
 describe("Today completion confirmation", () => {
-  it("counts 0..7 day open tasks, separates overdue and preserves closed history", async () => {
+  it("counts 0..7 day open tasks, surfaces overdue first and preserves closed history", async () => {
     mocks.listTasks.mockResolvedValue([
       { ...task, id: "old", title: "旧待办", dueAt: "2026-11-13" },
       { ...task, id: "today", title: "今天待办", dueAt: "2026-11-14" },
@@ -36,10 +36,12 @@ describe("Today completion confirmation", () => {
     ]);
     mount();
     await screen.findByText("旧待办");
-    expect(within(screen.getByRole("link", { name: "2 7 天内截止" })).getByText("2")).toBeVisible();
-    expect(screen.getByRole("link", { name: "1 已逾期待处理" })).toHaveAttribute("href", "/app/growth?view=overdue");
-    expect(screen.queryByRole("checkbox", { name: "完成 旧待办" })).not.toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "完成 今天待办" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "2 近期截止（7 天内）" })).toHaveAttribute("href", "/app/tasks?view=soon");
+    expect(screen.getByRole("link", { name: "1 已逾期待处理" })).toHaveAttribute("href", "/app/tasks?view=overdue");
+    // 逾期任务置顶展示（带已逾期标签），已完成/已取消不进入驾驶舱。
+    const boxes = screen.getAllByRole("checkbox");
+    expect(boxes.map((b) => b.getAttribute("aria-label"))).toEqual(["完成 旧待办", "完成 今天待办", "完成 七天待办", "完成 八天待办"]);
+    expect(screen.getByText("截止 2026-11-13 · 已逾期")).toBeVisible();
     expect(mocks.updateTask).not.toHaveBeenCalled();
   });
   it("does not write before confirmation; cancelling keeps the todo; confirming writes once", async () => {

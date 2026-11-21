@@ -52,7 +52,7 @@ async function syncAs(page: Page, owner: string) {
 test("同一浏览器 Demo/A/B 去重隔离，刷新同账号仍去重，重置 Demo 不清理真实账号", async ({ page }) => {
   await page.route("**/api/providers", route => route.fulfill({ json: { providers: [], mutable: false } }));
   await page.goto("/app");
-  await expect(page.getByRole("heading", { name: "今天，先做好这几件事。", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "今天需要关注什么", exact: true })).toBeVisible();
   await page.evaluate(async (text) => {
     // @ts-ignore Browser-side Vite module URL.
     const { dedupKey } = await import("/src/lib/ingest/clean.ts");

@@ -64,38 +64,40 @@ test("机会时效：默认不展示过期项、分类保留历史、窄屏不�
 test("待办时效：逾期不算临近截止、跳转筛选、日常完成与撤销仍能持久化", async ({ page }) => {
   await seedExpiryFixture(page);
   await page.goto("/app");
-  await expect(page.getByRole("link", { name: "2 7 天内截止", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true })).toBeVisible();
   const overdueStat = page.getByRole("link", { name: "1 已逾期待处理", exact: true });
   await expect(overdueStat).toBeVisible();
-  await expect(page.getByRole("heading", { name: "逾期待办（1）" })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("expiry-dashboard.png"), fullPage: true, animations: "disabled" });
   await overdueStat.click();
   await expect(page).toHaveURL(/view=overdue/);
   await expect(page.getByText("逾期班会任务", { exact: true })).toBeVisible();
-  await expect(page.getByText("已完成旧任务", { exact: true })).toBeVisible(); // growth archive, not overdue list
+  await expect(page.getByText("已完成旧任务", { exact: true })).toHaveCount(0); // 逾期视图不混入已完成
   await expect(page.getByText("今日截止任务", { exact: true })).toHaveCount(0);
-  await page.getByRole("tab", { name: "7 天内截止", exact: true }).click();
-  await expect(page.getByRole("tab", { name: "7 天内截止", exact: true })).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tab", { name: "已逾期（1）", exact: true })).toHaveAttribute("aria-selected", "false");
+  await page.getByRole("button", { name: "近期截止", exact: true }).click();
+  await expect(page.getByRole("button", { name: "近期截止", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "已逾期（1）", exact: true })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByText("今日截止任务", { exact: true })).toBeVisible();
   await expect(page.getByText("七天后任务", { exact: true })).toBeVisible();
   await expect(page.getByText("逾期班会任务", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "已完成", exact: true }).click();
+  await expect(page.getByText("已完成旧任务", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 740 });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: test.info().outputPath("expiry-growth-mobile.png"), fullPage: true, animations: "disabled" });
-  await page.goto("/app/daily");
-  const overdueSection = page.getByRole("region", { name: "逾期待处理（1）", exact: true });
-  await expect(overdueSection).toBeVisible();
-  await overdueSection.getByRole("checkbox", { name: "完成 逾期班会任务", exact: true }).click();
-  await expect(page.getByRole("checkbox", { name: "撤销完成 逾期班会任务", exact: true })).toBeChecked();
+  // 统一任务中心：逾期任务确认完成后进入已完成，可撤销恢复。
+  await page.goto("/app/tasks?tab=tasks&view=open");
+  await page.getByRole("checkbox", { name: "完成 逾期班会任务", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "确认完成", exact: true }).click();
+  await page.getByRole("button", { name: "已完成", exact: true }).click();
+  await page.getByRole("button", { name: "撤销完成 逾期班会任务", exact: true }).click();
   await page.reload();
-  await page.getByRole("checkbox", { name: "撤销完成 逾期班会任务", exact: true }).click();
-  await expect(overdueSection.getByRole("checkbox", { name: "完成 逾期班会任务", exact: true })).not.toBeChecked();
+  await page.getByRole("button", { name: "进行中", exact: true }).click();
+  await expect(page.getByRole("checkbox", { name: "完成 逾期班会任务", exact: true })).toBeVisible();
   await page.goto("/app");
-  await page.getByRole("link", { name: "2 7 天内截止", exact: true }).waitFor();
+  await page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true }).waitFor();
   await page.clock.fastForward(3_600_100);
   await expect(page.getByRole("link", { name: "2 已逾期待处理", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "2 7 天内截止", exact: true })).toBeVisible(); // 11/21 & 11/22 now within seven days
+  await expect(page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true })).toBeVisible(); // 11/21 & 11/22 now within seven days
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("campusmate.demo.v1")!));
   expect(stored.tasks).toHaveLength(6);
   expect(stored.tasks.find((t: { id: string }) => t.id === "overdue").status).toBe("todo");

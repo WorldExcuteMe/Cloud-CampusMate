@@ -29,8 +29,8 @@ test("Today 勾选先确认：取消/关闭不改状态，确认后刷新保持�
   await expect(checkbox).toHaveCount(0);
   await page.reload();
   await expect(checkbox).toHaveCount(0);
-  await page.goto("/app/daily");
-  await expect(page.getByRole("checkbox", { name: "撤销完成 参加班会（辅导员通知）", exact: true })).toBeChecked();
+  await page.goto("/app/tasks?tab=tasks&view=done");
+  await expect(page.getByRole("button", { name: "撤销完成 参加班会（辅导员通知）", exact: true })).toBeVisible();
 });
 
 test("左右独立滚动，品牌和账号固定，切换页面仅重置内容滚动", async ({ page }) => {
@@ -47,7 +47,7 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
   const main = page.getByRole("main");
   const sidebar = page.getByRole("complementary", { name: "主侧边栏" });
   await nav.getByRole("link", { name: "任务与目标", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "日常任务专区" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "任务与目标" })).toBeVisible();
   await nav.evaluate((el) => { el.scrollTop = 0; });
   await main.hover({ position: { x: 400, y: 30 } });
   await page.mouse.wheel(0, 900);
@@ -59,28 +59,28 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
   await expect.poll(() => nav.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   expect(await main.evaluate((el) => el.scrollTop)).toBe(rightScroll);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  const brand = await sidebar.getByText("CampusMate", { exact: true }).boundingBox();
+  const brand = await sidebar.locator('img[alt="CampusMate"]').boundingBox();
   const account = await sidebar.getByRole("button", { name: "用户与设置", exact: true }).boundingBox();
   expect(brand!.y).toBeGreaterThanOrEqual(0);
   expect(account!.y + account!.height).toBeLessThanOrEqual(540);
   await page.screenshot({ path: test.info().outputPath("independent-scroll.png"), fullPage: true });
   await nav.getByRole("link", { name: "信息中心", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见。" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见" })).toBeVisible();
   expect(await main.evaluate((el) => el.scrollTop)).toBe(0);
   expect(await nav.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });
 
 test("移动端内容仍可滚动，确认框不超出屏幕", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 550 });
-  await page.goto("/app/daily");
-  await expect(page.getByRole("heading", { name: "日常任务专区" })).toBeVisible();
+  await page.goto("/app/tasks");
+  await expect(page.getByRole("heading", { name: "任务与目标" })).toBeVisible();
   const main = page.getByRole("main");
   await main.hover({ position: { x: 150, y: 20 } });
   await page.mouse.wheel(0, 800);
   await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole("navigation", { name: "移动导航" }).getByRole("link", { name: "Today", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "今天，先做好这几件事。", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "今天需要关注什么", exact: true })).toBeVisible();
   await currentDemoTask(page);
   await page.getByRole("checkbox", { name: /参加班会/ }).click();
   const dialog = page.getByRole("alertdialog");

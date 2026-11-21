@@ -148,6 +148,15 @@ export class SitesRepository implements Repository {
     return isRow(data[kind]) ? data[kind] : item;
   }
 
+  // 云端 POST 仅插入+去重；状态同步走 PATCH 增量合并。
+  private async patch(kind: "inbox" | "daily" | "opportunities", item: Row): Promise<Row> {
+    const data = await req<Record<string, unknown>>(`/v1/domain/${kind}`, {
+      method: "PATCH",
+      body: JSON.stringify(item),
+    });
+    return isRow(data[kind]) ? data[kind] : item;
+  }
+
   async getProfile(): Promise<Profile> {
     const data = await req<{ profile?: unknown }>("/v1/domain/profile");
     return mapProfile(isRow(data.profile) ? data.profile : {}, this.userId);
@@ -171,9 +180,7 @@ export class SitesRepository implements Repository {
     return mapInbox(await this.save("inbox", item as unknown as Row), this.userId);
   }
   async updateInbox(id: string, patch: Partial<InboxItem>): Promise<InboxItem> {
-    const current = (await this.items("inbox")).find((item) => item.id === id);
-    if (!current) throw new Error("通知不存在");
-    return mapInbox(await this.save("inbox", { ...current, ...patch, id }), this.userId);
+    return mapInbox(await this.patch("inbox", { ...patch, id }), this.userId);
   }
 
   async listTasks(): Promise<Task[]> {
@@ -183,9 +190,7 @@ export class SitesRepository implements Repository {
     return mapTask(await this.save("daily", task as unknown as Row), this.userId);
   }
   async updateTask(id: string, patch: Partial<Task>): Promise<Task> {
-    const current = (await this.items("daily")).find((item) => item.id === id);
-    if (!current) throw new Error("任务不存在");
-    return mapTask(await this.save("daily", { ...current, ...patch, id }), this.userId);
+    return mapTask(await this.patch("daily", { ...patch, id }), this.userId);
   }
 
   async listOpportunities(): Promise<Opportunity[]> {
