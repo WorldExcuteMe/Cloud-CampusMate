@@ -65,7 +65,7 @@ test("左右独立滚动，品牌和账号固定，切换页面仅重置内容�
   expect(account!.y + account!.height).toBeLessThanOrEqual(540);
   await page.screenshot({ path: test.info().outputPath("independent-scroll.png"), fullPage: true });
   await nav.getByRole("link", { name: "信息中心", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见。" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "重要消息，值得被好好看见" })).toBeVisible();
   expect(await main.evaluate((el) => el.scrollTop)).toBe(0);
   expect(await nav.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });
@@ -80,7 +80,7 @@ test("移动端内容仍可滚动，确认框不超出屏幕", async ({ page }) 
   await expect.poll(() => main.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole("navigation", { name: "移动导航" }).getByRole("link", { name: "Today", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "今天，先做好这几件事。", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "今天需要关注什么", exact: true })).toBeVisible();
   await currentDemoTask(page);
   await page.getByRole("checkbox", { name: /参加班会/ }).click();
   const dialog = page.getByRole("alertdialog");

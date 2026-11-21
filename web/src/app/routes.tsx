@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Layout } from "./layout";
 const LandingPage = lazy(() => import("@/features/landing/LandingPage").then((m) => ({ default: m.LandingPage })));
 const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })));
@@ -18,6 +18,12 @@ const DailyTasksPage = lazy(() => import("@/features/daily/DailyTasksPage").then
 const CalendarPage = lazy(() => import("@/features/calendar/CalendarPage").then((m) => ({ default: m.CalendarPage })));
 import { LoginPage } from "./auth";
 
+// 临时桥接：统一任务中心在 Phase 3 落地前，/app/tasks 先保留查询参数转到现有任务页。
+function TasksBridge() {
+  const loc = useLocation();
+  return <Navigate to={{ pathname: "/app/growth", search: loc.search }} replace />;
+}
+
 export function AppRoutes() {
   return (
     <Suspense fallback={<p role="status" className="p-6 text-sm text-muted-foreground">加载中…</p>}>
@@ -31,6 +37,7 @@ export function AppRoutes() {
         <Route path="inbox/new" element={<NewInboxPage />} />
         <Route path="inbox/:id" element={<InboxDetailPage />} />
         <Route path="daily" element={<DailyTasksPage />} />
+        <Route path="tasks" element={<TasksBridge />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="radar" element={<RadarPage />} />
         <Route path="radar/:id" element={<OpportunityDetailPage />} />

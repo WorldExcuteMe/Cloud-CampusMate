@@ -64,10 +64,9 @@ test("机会时效：默认不展示过期项、分类保留历史、窄屏不�
 test("待办时效：逾期不算临近截止、跳转筛选、日常完成与撤销仍能持久化", async ({ page }) => {
   await seedExpiryFixture(page);
   await page.goto("/app");
-  await expect(page.getByRole("link", { name: "2 7 天内截止", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true })).toBeVisible();
   const overdueStat = page.getByRole("link", { name: "1 已逾期待处理", exact: true });
   await expect(overdueStat).toBeVisible();
-  await expect(page.getByRole("heading", { name: "逾期待办（1）" })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("expiry-dashboard.png"), fullPage: true, animations: "disabled" });
   await overdueStat.click();
   await expect(page).toHaveURL(/view=overdue/);
@@ -92,10 +91,10 @@ test("待办时效：逾期不算临近截止、跳转筛选、日常完成与�
   await page.getByRole("checkbox", { name: "撤销完成 逾期班会任务", exact: true }).click();
   await expect(overdueSection.getByRole("checkbox", { name: "完成 逾期班会任务", exact: true })).not.toBeChecked();
   await page.goto("/app");
-  await page.getByRole("link", { name: "2 7 天内截止", exact: true }).waitFor();
+  await page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true }).waitFor();
   await page.clock.fastForward(3_600_100);
   await expect(page.getByRole("link", { name: "2 已逾期待处理", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "2 7 天内截止", exact: true })).toBeVisible(); // 11/21 & 11/22 now within seven days
+  await expect(page.getByRole("link", { name: "2 近期截止（7 天内）", exact: true })).toBeVisible(); // 11/21 & 11/22 now within seven days
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("campusmate.demo.v1")!));
   expect(stored.tasks).toHaveLength(6);
   expect(stored.tasks.find((t: { id: string }) => t.id === "overdue").status).toBe("todo");
