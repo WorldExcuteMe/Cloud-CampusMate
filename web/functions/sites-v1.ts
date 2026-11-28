@@ -1032,7 +1032,9 @@ export function createSitesV1(deps: SitesV1Deps) {
     const prompt = intent && intent.trim() ? intent : title;
     // Cloud Agents 已隐藏：所有新任务固定走服务端模型执行器；旧客户端传 qoder-cloud 时映射到默认模型。
     const requestedProvider = textOf(data.providerId);
-    const providerId = requestedProvider === "qoder-cloud" ? "srv-moss" : requestedProvider || "srv-moss";
+    const providerId = requestedProvider === "qoder-cloud" || requestedProvider === "srv-moss"
+      ? "srv-deepseek41f"
+      : requestedProvider || "srv-deepseek41f";
     const runtime = deps.exec ? "server-model" : "cloud-agents";
     if (!prompt.trim()) throw new AppError(400, "invalid_title");
     await requireSession(owner, sessionId);

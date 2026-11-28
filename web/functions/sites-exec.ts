@@ -26,8 +26,8 @@ export interface ExecQuery extends PromiseLike<{ data: unknown; error?: unknown 
 export interface ExecDatabase { from(table: string): ExecQuery }
 
 export type ServerReasoningTier = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-export type ServerProviderId = "srv-qwen38" | "srv-mimo" | "srv-moss";
-export type ServerKeyRef = "radeon" | "moss";
+export type ServerProviderId = "srv-qwen38" | "srv-mimo" | "srv-deepseek41f";
+export type ServerKeyRef = "radeon";
 
 export interface ServerProvider {
   id: ServerProviderId;
@@ -38,7 +38,7 @@ export interface ServerProvider {
   // 模型真实支持的 reasoning_effort 档位；超出范围的用户偏好在这里 clamp。
   tiers: readonly ServerReasoningTier[];
   defaultTier: ServerReasoningTier;
-  // radeon 接受 data URI；moss 只接受 storage 公网 URL。
+  // radeon 接受 data URI；public-url Provider 只接受 storage 公网 URL。
   vision: "data-uri" | "public-url";
   // 模型真实上下文上限（token）；来自 /models 元数据或官方规格。
   contextLimit: number;
@@ -72,21 +72,23 @@ export const SERVER_PROVIDERS: readonly ServerProvider[] = Object.freeze([
     contextLimit: 1_048_576,
   },
   {
-    id: "srv-moss",
-    name: "nex-n2.6",
-    baseUrl: "https://api.mosi.cn/v1",
-    model: "nex-n2.6",
-    keyRef: "moss",
+    id: "srv-deepseek41f",
+    name: "DeepSeek-V4.1-Flash",
+    baseUrl: "https://developer.amd.com.cn/radeon/api/v1",
+    model: "DeepSeek-V4.1-Flash",
+    keyRef: "radeon",
     tiers: ["minimal", "low", "medium", "high", "xhigh", "max"],
     defaultTier: "medium",
-    vision: "public-url",
-    // MOSS 未公开该值；先按 256K 保守展示，页面可实时调整。
-    contextLimit: 262_144,
+    vision: "data-uri",
+    // AMD 模型目录：1,048,576 上下文，支持图片输入与工具调用。
+    contextLimit: 1_048_576,
   },
 ]);
 
 export function serverProvider(id: unknown): ServerProvider | null {
-  return typeof id === "string" ? SERVER_PROVIDERS.find(provider => provider.id === id) ?? null : null;
+  // 兼容旧任务：srv-moss 映射到新的 AMD DeepSeek。
+  const normalized = id === "srv-moss" ? "srv-deepseek41f" : id;
+  return typeof normalized === "string" ? SERVER_PROVIDERS.find(provider => provider.id === normalized) ?? null : null;
 }
 // 用户 BYOK 行存于 campusmate_providers；密钥单独加密在 campusmate_secrets。
 export const PROVIDERS_TABLE = "campusmate_providers";
@@ -494,7 +496,7 @@ async function sha256Hex(value: string): Promise<string> {
 
 // ── Vault：campusmate_secrets 的 AES-256-GCM 封装 ───────────────────────────
 // master 行：id=__master__，owner_id=__vault__，内容是被 wrap key 包裹的 32 字节主密钥。
-// 服务端 key 行：id=radeon / moss，owner_id=__vault__，用主密钥加密。
+// 服务端 key 行：id=radeon，owner_id=__vault__，用主密钥加密。
 // 用户 BYOK 行：id=user:<owner>:<providerId>，owner_id=<owner>。
 export const VAULT_MASTER_ID = "__master__";
 export const VAULT_OWNER = "__vault__";
@@ -606,7 +608,7 @@ export interface VaultOptions {
 
 // 只返回明文密钥给调用方；任何错误都是固定安全码，绝不包含密钥或密文。
 export async function decryptProviderKey(db: ExecDatabase, secretId: string, options: VaultOptions = {}): Promise<string> {
-  const isServerKey = secretId === "radeon" || secretId === "moss";
+  const isServerKey = secretId === "radeon";
   const userMatch = /^user:([^:]{1,200}):([A-Za-z0-9_.:-]{1,120})$/.exec(secretId);
   if (!isServerKey && !userMatch) throw new Error("vault_secret_id_invalid");
   const ownerId = isServerKey ? VAULT_OWNER : options.owner;
@@ -1532,7 +1534,7 @@ function toolSummary(value: Row): string {
   return "";
 }
 
-// ── 图片：radeon 用 data URI，moss 必须 storage 公网 URL ────────────────────
+// ── 图片：radeon 用 data URI，public-url Provider 必须 storage 公网 URL ───────
 async function imageParts(provider: ServerProvider, images: string[], deps: ServerExecDeps, owner: string, taskId: string): Promise<Row[]> {
   if (!images.length) return [];
   if (provider.vision === "data-uri") {
@@ -1548,7 +1550,7 @@ async function imageParts(provider: ServerProvider, images: string[], deps: Serv
       parts.push({ type: "image_url", image_url: { url: image, detail: "high" } });
       continue;
     }
-    // moss 不接受 data URI；没有 storage 客户端时明确报错，绝不静默丢图。
+    // public-url Provider 不接受 data URI；没有 storage 客户端时明确报错，绝不静默丢图。
     if (!storage?.put) throw new ExecError("vision_storage_required", 400);
     const match = /^data:(image\/(?:png|jpe?g|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i.exec(image);
     if (!match) throw new ExecError("vision_image_invalid", 400);
@@ -1614,7 +1616,7 @@ async function advanceInternal(taskId: string, owner: string, deps: ServerExecDe
   if (!provider) throw new ExecError("unsupported_provider", 400);
 
   let checkpoint = parseCheckpoint(task.checkpoint);
-  // nex/moss 要求公网图片 URL；Edge 暂无 storage 时自动切到支持 data URI 的 Qwen，
+  // public-url Provider 要求公网图片 URL；Edge 暂无 storage 时自动切到支持 data URI 的 Qwen，
   // 避免直接抛 vision_storage_required；事件里记录真实模型切换。
   if (provider.vision === "public-url" && checkpoint.images.length && !deps.storage?.put) {
     const fallback = serverProvider("srv-qwen38");

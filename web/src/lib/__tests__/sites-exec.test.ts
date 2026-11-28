@@ -169,12 +169,14 @@ describe("服务端模型档位 clamp", () => {
     expect(resolveServerThinking(qwen, "max", "summary", 1200).effective).toBe("low");
   });
 
-  it("MiMo 的 minimal 显式映射为 low，Moss 保留 minimal", () => {
+  it("MiMo 的 minimal 显式映射为 low，DeepSeek V4.1 保留 minimal", () => {
     const mimo = serverProvider("srv-mimo")!;
-    const moss = serverProvider("srv-moss")!;
+    const deepseek = serverProvider("srv-deepseek41f")!;
     expect(resolveServerThinking(mimo, "minimal", "simple", 2048).effective).toBe("low");
-    expect(resolveServerThinking(moss, "minimal", "simple", 2048).effective).toBe("minimal");
-    expect(SERVER_PROVIDERS.map(provider => provider.id)).toEqual(["srv-qwen38", "srv-mimo", "srv-moss"]);
+    expect(resolveServerThinking(deepseek, "minimal", "simple", 2048).effective).toBe("minimal");
+    expect(deepseek.vision).toBe("data-uri");
+    expect(deepseek.contextLimit).toBe(1_048_576);
+    expect(SERVER_PROVIDERS.map(provider => provider.id)).toEqual(["srv-qwen38", "srv-mimo", "srv-deepseek41f"]);
   });
 });
 
@@ -184,7 +186,7 @@ describe("Vault AES-256-GCM", () => {
     const aad = vaultAad("radeon", VAULT_OWNER, 1);
     const fields = await encrypt("sk-round-trip", key, aad);
     expect(await decrypt(fields, key, aad)).toBe("sk-round-trip");
-    await expect(decrypt(fields, key, vaultAad("moss", VAULT_OWNER, 1))).rejects.toThrow("vault_decrypt_failed");
+    await expect(decrypt(fields, key, vaultAad("srv-deepseek41f", VAULT_OWNER, 1))).rejects.toThrow("vault_decrypt_failed");
   });
 
   it("服务端 key 可解，用户 BYOK 必须匹配行 owner", async () => {

@@ -45,7 +45,7 @@ Qoder Sites Function (Deno)
    └─ Artifact exporter (DOCX / XLSX / HTML / CSV / SVG / Mermaid / JSON)
    │
    ├──► Sites Database  app.campusmate_*  (tasks, events, messages, artifacts ...)
-   └──► Server-side model providers  (Qwen / MiMo / Moss)
+   └──► Server-side model providers  (Qwen / MiMo / DeepSeek)
 ```
 
 更完整的运行时说明见 [docs/CLOUD_ARCHITECTURE.md](docs/CLOUD_ARCHITECTURE.md)。

@@ -28,7 +28,7 @@ const managedProviders = [
   ...SERVER_PROVIDERS.map(provider => ({
     id: provider.id, displayName: provider.name, modelId: provider.model,
     protocol: "openai", baseUrl: provider.baseUrl, contextLimit: provider.contextLimit,
-    managed: true, readonly: true, builtin: true, isDefault: provider.id === "srv-moss",
+    managed: true, readonly: true, builtin: true, isDefault: provider.id === "srv-deepseek41f",
     hasKey: true,
     capabilities: {
       vision: true,
